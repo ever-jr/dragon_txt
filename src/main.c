@@ -36,12 +36,18 @@ void game_show_hours(struct game_state *gs) {
     char *hours_name;
 
 
-    if (time_hours < 12.0f) {
+    if (time_hours == 0.0f) {
+        hours_name = "midnight";
+    } else if (time_hours < 12.0f) {
         hours_name = "morning";
-    } else if (time_hours >= 12.0f && time_hours < 18.0f) {
+    } else if (time_hours == 12.0f) {
+        hours_name = "noon";
+    } else if (time_hours < 18.0f) {
+        hours_name = "afternoon";
+    } else if (time_hours >= 18.0f) {
         hours_name = "evening";
     } else {
-        hours_name = "noon";
+        hours_name = "???";
     }
 
     printf("| Hours: %.0f:%.0f (%s)\n| Days passed: %.0f\n",
@@ -70,7 +76,7 @@ int main() {
         char player_name[CHARACTER_NAME_SIZE];
 
         printf("[CHARACTER CREATION]\nEnter character name: ");
-        fgets(player_name, CHARACTER_NAME_SIZE, stdin); // read input
+        fgets(player_name, sizeof(player_name), stdin); // read input
 
         // remove trailing newline if present
         size_t len = strlen(player_name);
@@ -84,9 +90,9 @@ int main() {
     // ----------------------------------------------------
 
     // defining enemies -----------------------------------
-    struct character enemy_goblin = character_create("Goblin                         ", 30.0f, 1);
+    struct character enemy_goblin = character_create("Goblin", 30.0f, 1);
 
-    struct character enemy_orc = character_create("Orc                            ", 220.0f, 4);
+    struct character enemy_orc = character_create("Orc", 220.0f, 4);
     // ----------------------------------------------------
 
 
@@ -124,6 +130,8 @@ int main() {
             game.time_passed_in_minutes += 3 * 60;
 
             th_stop();
+
+            game_update(&game);
         } else if (strcmp(command, "battle") == 0) {
             struct character enemy = enemy_goblin;
 
@@ -162,13 +170,18 @@ int main() {
                     character_take_dmg(&enemy, player_damage);
                 } else if (strcmp(command, "run") == 0) {
                     is_running_from_battle = true;
+                } else {
+                    th_clear();
+                    printf("Invalid command! Try again...");
+                    th_stop();
                 }
 
-                game_update(&game);
                 is_enemy_dead = character_has_died(&enemy);
 
                 float enemy_damage = character_calc_final_damage(&enemy);
                 character_take_dmg(game.main_character, enemy_damage);
+
+                game_update(&game);
             }
 
             if (is_enemy_dead) {
@@ -178,9 +191,13 @@ int main() {
             }
 
             game.is_in_battle = false;
+            game_update(&game);
+        } else {
+            th_clear();
+            printf("Invalid command! Try again...");
+            th_stop();
         }
 
-        game_update(&game);
     } while (!game.has_ended);
 
     game_show_gameover_message(&game);

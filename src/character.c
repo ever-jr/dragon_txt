@@ -1,11 +1,14 @@
 #include "character.h"
+#include <corecrt.h>
 #include <stdio.h>
 #include <string.h>
 
-struct character character_create(const char name[CHARACTER_NAME_SIZE], float health, uint8_t strength) {
+struct character character_create(char *name, float health, uint8_t strength) {
     struct character new_character;
-    strncpy_s(new_character.name, CHARACTER_NAME_SIZE, name, CHARACTER_NAME_SIZE);
-    new_character.name[CHARACTER_NAME_SIZE - 1] = '\0';
+    size_t name_length = strlen(name);
+    strncpy_s(new_character.name, sizeof(new_character.name), name, _TRUNCATE);
+
+    new_character.name[name_length] = '\0';
     new_character.health = health;
     new_character.max_health = health;
     new_character.strength = strength;

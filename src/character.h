@@ -16,7 +16,7 @@ struct character {
     float damage;
 };
 
-struct character character_create(const char name[CHARACTER_NAME_SIZE], float health, uint8_t strength);
+struct character character_create(char *name, float health, uint8_t strength);
 
 /**
  * Calculate the character's final damage according to his attributes.
