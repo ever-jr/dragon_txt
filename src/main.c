@@ -1,18 +1,51 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 #include "term_helper.h"
 #include "character.h"
 
 struct game_state {
     bool has_ended;
+    unsigned int time_passed_in_minutes;
+
     struct character *main_character;
+    bool is_in_battle;
 };
 
 void game_update(struct game_state *gs) {
     if (character_has_died(gs->main_character)) {
         gs->has_ended = true;
     }
+
+    if (gs->is_in_battle) {
+        gs->time_passed_in_minutes += 10;
+    } else {
+        gs->time_passed_in_minutes += 60;
+    }
+}
+
+void game_show_hours(struct game_state *gs) {
+    float minutes_passed = (float)gs->time_passed_in_minutes;
+    float hours_passed = floorf(minutes_passed / 60.0f);
+    float days_passed = floorf(hours_passed / 24.0f);
+
+    float time_minutes = minutes_passed - (hours_passed * 60.0f);
+    float time_hours = hours_passed - (days_passed * 24.0f);
+
+    char *hours_name;
+
+
+    if (time_hours < 12.0f) {
+        hours_name = "morning";
+    } else if (time_hours >= 12.0f && time_hours < 18.0f) {
+        hours_name = "evening";
+    } else {
+        hours_name = "noon";
+    }
+
+    printf("| Hours: %.0f:%.0f (%s)\n| Days passed: %.0f\n",
+           time_hours, time_minutes, hours_name, days_passed);
 }
 
 void game_show_gameover_message(const struct game_state *gs) {
@@ -28,6 +61,7 @@ int main() {
 
     struct game_state game;
     game.has_ended = false;
+    game.time_passed_in_minutes = 12 * 60;
 
     // defining player ------------------------------------
     struct character player;
@@ -62,8 +96,10 @@ int main() {
     do {
         th_clear();
 
+        game_show_hours(&game);
+
         character_print_stats(&player);
-        printf("\n[COMMANDS]\n- exit\n- sdmg\n- battle\n: ");
+        printf("\n[COMMANDS]\n- exit\n- rest\n- battle\n: ");
         fgets(command, COMMAND_SIZE, stdin); // read input
 
         // remove trailing newline if present
@@ -78,11 +114,20 @@ int main() {
 
         if (strcmp(command, "exit") == 0) {
             game.has_ended = true;
-        } else if (strcmp(command, "sdmg") == 0) {
-            character_take_dmg(&player, 10.0f);
+        } else if (strcmp(command, "rest") == 0) {
+            th_clear();
+
+            struct character *player = game.main_character;
+            float heal_amount = 50.0f;
+            character_restore_health(player, heal_amount);
+            printf("%s has restored %.2f of health\n", player->name, heal_amount);
+            game.time_passed_in_minutes += 3 * 60;
+
+            th_stop();
         } else if (strcmp(command, "battle") == 0) {
             struct character enemy = enemy_goblin;
 
+            game.is_in_battle = true;
             bool is_running_from_battle = false;
             bool is_enemy_dead = character_has_died(&enemy);
 
@@ -131,6 +176,8 @@ int main() {
                 printf("%s has died!\n", enemy.name);
                 th_stop();
             }
+
+            game.is_in_battle = false;
         }
 
         game_update(&game);

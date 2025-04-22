@@ -30,6 +30,8 @@ void character_print_stats(const struct character *c);
 
 void character_take_dmg(struct character *c, float damage);
 
+void character_restore_health(struct character *c, float heal_amount);
+
 bool character_has_died(struct character *c);
 
 #endif

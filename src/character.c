@@ -45,6 +45,18 @@ void character_take_dmg(struct character *c, float damage) {
     c->health = health;
 }
 
+void character_restore_health(struct character *c, float heal_amount) {
+    float health = c->health;
+    float max_health = c->max_health;
+
+    health += heal_amount;
+    if (health > max_health) {
+        health = max_health;
+    }
+
+    c->health = health;
+}
+
 bool character_has_died(struct character *c) {
     return c->health <= 0.0f;
 }
